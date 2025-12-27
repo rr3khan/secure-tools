@@ -22,6 +22,24 @@ from .tools import ToolCall, ToolResult, tool_registry
 console = Console()
 
 
+class OllamaError(Exception):
+    """Base exception for Ollama-related errors."""
+
+    pass
+
+
+class OllamaConnectionError(OllamaError):
+    """Failed to connect to Ollama."""
+
+    pass
+
+
+class OllamaResponseError(OllamaError):
+    """Ollama returned an unexpected response."""
+
+    pass
+
+
 class Message(BaseModel):
     """A conversation message."""
 
@@ -84,7 +102,13 @@ You have access to tools that can fetch real-time data. Use them when appropriat
         return tools
 
     def _call_ollama(self, messages: list[dict], include_tools: bool = True) -> dict:
-        """Make a request to Ollama's chat API."""
+        """
+        Make a request to Ollama's chat API.
+
+        Raises:
+            OllamaConnectionError: If connection to Ollama fails
+            OllamaResponseError: If Ollama returns an invalid response
+        """
         payload = {"model": config.ollama.model, "messages": messages, "stream": False}
 
         if include_tools:
@@ -92,9 +116,39 @@ You have access to tools that can fetch real-time data. Use them when appropriat
             if tools:
                 payload["tools"] = tools
 
-        response = self.client.post("/api/chat", json=payload)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = self.client.post("/api/chat", json=payload)
+            response.raise_for_status()
+        except httpx.ConnectError as e:
+            raise OllamaConnectionError(
+                f"Failed to connect to Ollama at {config.ollama.base_url}. "
+                "Is Ollama running? Try: ollama serve"
+            ) from e
+        except httpx.TimeoutException as e:
+            raise OllamaConnectionError(
+                f"Ollama request timed out after {config.ollama.timeout}s. "
+                "The model may be loading or the request is too complex."
+            ) from e
+        except httpx.HTTPStatusError as e:
+            raise OllamaResponseError(
+                f"Ollama returned HTTP {e.response.status_code}: {e.response.text[:200]}"
+            ) from e
+        except httpx.HTTPError as e:
+            raise OllamaConnectionError(f"HTTP error communicating with Ollama: {e}") from e
+
+        # Parse and validate response
+        try:
+            data = response.json()
+        except ValueError as e:
+            raise OllamaResponseError(f"Ollama returned invalid JSON: {response.text[:200]}") from e
+
+        # Validate expected response structure
+        if "message" not in data:
+            keys = list(data.keys())
+            console.print(f"[dim yellow]Warning: Unexpected Ollama response: {keys}[/dim yellow]")
+            raise OllamaResponseError(f"Ollama response missing 'message' field. Got keys: {keys}")
+
+        return data
 
     def _validate_tool_call(self, tool_call: dict) -> ToolCall:
         """
@@ -169,8 +223,9 @@ You have access to tools that can fetch real-time data. Use them when appropriat
                     m["tool_call_id"] = msg.tool_call_id
                 messages.append(m)
 
-            # Call Ollama
+            # Call Ollama (errors bubble up with clear messages)
             response = self._call_ollama(messages)
+
             assistant_msg = response.get("message", {})
 
             # Check for tool calls

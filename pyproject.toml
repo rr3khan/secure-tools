@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "secure-tools"
 version = "0.1.0"
 description = "Secure Tool Runner - Secure LLM tool execution with 1Password"
-readme = "readme.md"
+readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
@@ -40,6 +40,7 @@ include = ["src*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
+pythonpath = ["."]
 
 [tool.ruff]
 target-version = "py311"
