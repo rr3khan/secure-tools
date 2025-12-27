@@ -17,23 +17,9 @@ from pydantic import BaseModel
 from rich.console import Console
 
 from .config import config
+from .tools import ToolCall, ToolResult
 
 console = Console()
-
-
-class ToolCall(BaseModel):
-    """A validated tool call from the LLM."""
-
-    id: str
-    name: str
-    arguments: dict
-
-
-class ToolResult(BaseModel):
-    """Result of a tool execution."""
-
-    success: bool
-    content: str
 
 
 class SecretReference(BaseModel):

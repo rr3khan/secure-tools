@@ -138,7 +138,7 @@ You have access to tools that can fetch real-time data. Use them when appropriat
 
         # Parse and validate response
         try:
-            data = response.json()
+            data: dict = response.json()
         except ValueError as e:
             raise OllamaResponseError(f"Ollama returned invalid JSON: {response.text[:200]}") from e
 
@@ -214,9 +214,9 @@ You have access to tools that can fetch real-time data. Use them when appropriat
 
         while True:
             # Convert conversation to Ollama format, starting with system prompt
-            messages = [{"role": "system", "content": self.SYSTEM_PROMPT}]
+            messages: list[dict] = [{"role": "system", "content": self.SYSTEM_PROMPT}]
             for msg in self.conversation:
-                m = {"role": msg.role, "content": msg.content}
+                m: dict = {"role": msg.role, "content": msg.content}
                 if msg.tool_calls:
                     m["tool_calls"] = msg.tool_calls
                 if msg.tool_call_id:
@@ -275,7 +275,7 @@ You have access to tools that can fetch real-time data. Use them when appropriat
                 continue
 
             # No tool calls - this is the final response
-            final_content = assistant_msg.get("content", "")
+            final_content: str = assistant_msg.get("content", "")
             self.conversation.append(Message(role="assistant", content=final_content))
             return final_content
 

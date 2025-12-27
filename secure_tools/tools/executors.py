@@ -12,18 +12,13 @@ SECURITY RULES:
 3. Handle errors gracefully without exposing internals
 """
 
+from __future__ import annotations
+
 import json
 
 import httpx
 
-
-# Import these locally to avoid circular imports
-# ToolResult is re-defined here for clarity
-class ToolResult:
-    def __init__(self, success: bool, content: str):
-        self.success = success
-        self.content = content
-
+from . import ToolResult
 
 # =============================================================================
 # Weather Tool Executor
@@ -66,7 +61,7 @@ def execute_get_current_weather(arguments: dict, secrets: dict) -> ToolResult:
 def _mock_weather(location: str, temp_format: str) -> ToolResult:
     """Mock weather response for testing without API keys."""
     # Simple mock data based on location
-    mock_data = {
+    mock_data: dict[str, dict[str, int | str]] = {
         "paris": {"temp_c": 12, "condition": "cloudy"},
         "london": {"temp_c": 8, "condition": "rainy"},
         "tokyo": {"temp_c": 18, "condition": "sunny"},
@@ -79,6 +74,7 @@ def _mock_weather(location: str, temp_format: str) -> ToolResult:
     data = mock_data.get(loc_key, {"temp_c": 20, "condition": "partly cloudy"})
 
     temp_c = data["temp_c"]
+    assert isinstance(temp_c, int)
     if temp_format == "fahrenheit":
         temp = round(temp_c * 9 / 5 + 32)
         unit = "°F"
