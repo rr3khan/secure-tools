@@ -348,6 +348,76 @@ def test_weather_api(
         raise typer.Exit(1)
 
 
+@app.command()
+def help():
+    """Show a comprehensive guide on how to use Secure Tools."""
+    help_text = """
+# Secure Tools - Quick Reference
+
+## What is this?
+A secure tool access layer between Ollama LLMs and authenticated APIs.
+Secrets are stored in 1Password and **never exposed to the LLM**.
+
+## Getting Started
+
+1. **Start a chat session:**
+   ```
+   task chat
+   ```
+
+2. **Use real API keys from 1Password:**
+   ```
+   task chat:live
+   ```
+
+3. **Single query (no interactive mode):**
+   ```
+   task demo
+   ```
+
+## Available Commands
+
+| Command               | Description                              |
+|-----------------------|------------------------------------------|
+| `task chat`           | Interactive chat with mock data          |
+| `task chat:live`      | Interactive chat with real 1Password secrets |
+| `task demo`           | Quick demo query                         |
+| `task test`           | Run tests                                |
+| `task check`          | Verify Ollama & 1Password connections    |
+| `task lint`           | Run linter                               |
+| `task ci`             | Run all CI checks                        |
+
+## CLI Options
+
+```
+python run.py chat --help          # See all chat options
+python run.py chat --live          # Require real secrets
+python run.py chat --model qwen2   # Use different model
+python run.py chat --single "..."  # Single message mode
+```
+
+## Setting Up 1Password
+
+1. Install 1Password CLI: `brew install 1password-cli`
+2. Sign in: `op signin`
+3. Create a vault: `op vault create SecureTools`
+4. Add your API keys to the vault
+
+See `docs/1password-setup.md` for detailed instructions.
+
+## Architecture
+
+```
+User → LLM → Orchestrator → SecretsBroker → 1Password
+                                  ↓
+                            Tool Executor → External API
+```
+
+The LLM **never sees secrets**. The SecretsBroker is the trusted boundary.
+"""
+    console.print(Markdown(help_text))
+
+
 def main():
     """Entry point for the CLI."""
     app()

@@ -94,6 +94,12 @@ tasks:
     cmds:
       - "{{.PYTHON}} run.py list-tools"
 
+  help:
+    desc: Show comprehensive usage guide
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} run.py help"
+
   lint:
     desc: Run linter (ruff)
     deps: [setup:dev]
