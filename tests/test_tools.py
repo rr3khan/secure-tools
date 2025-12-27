@@ -6,7 +6,7 @@ Verifies that tools work correctly and don't leak secrets.
 
 import json
 
-from src.tools.executors import (
+from secure_tools.tools.executors import (
     execute_get_current_weather,
     execute_get_protected_status,
     execute_list_available_services,

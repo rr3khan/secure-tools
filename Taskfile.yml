@@ -123,13 +123,13 @@ tasks:
     desc: Run type checker (mypy) - warnings only
     deps: [setup:dev]
     cmds:
-      - "{{.PYTHON}} -m mypy src/ --ignore-missing-imports || echo '⚠ Type check has warnings (non-blocking)'"
+      - "{{.PYTHON}} -m mypy secure_tools/ --ignore-missing-imports || echo '⚠ Type check has warnings (non-blocking)'"
 
   security:
     desc: Run security scan (bandit)
     deps: [setup:dev]
     cmds:
-      - "{{.PYTHON}} -m bandit -r src/ -c pyproject.toml"
+      - "{{.PYTHON}} -m bandit -r secure_tools/ -c pyproject.toml"
 
   ci:
     desc: Run all CI checks (lint, typecheck, security, test)
@@ -153,7 +153,7 @@ tasks:
     cmds:
       - echo "🧹 Cleaning up..."
       - rm -rf {{.VENV}}
-      - rm -rf __pycache__ src/__pycache__ src/tools/__pycache__ tests/__pycache__
+      - rm -rf __pycache__ secure_tools/__pycache__ secure_tools/tools/__pycache__ tests/__pycache__
       - rm -rf .pytest_cache .mypy_cache .ruff_cache
       - rm -rf *.egg-info
       - echo "✅ Cleaned"

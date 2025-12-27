@@ -4,7 +4,7 @@ Tests for the Secrets Broker.
 These tests verify the security properties of the trusted boundary.
 """
 
-from src.secrets_broker import SecretReference, SecretsBroker, ToolResult
+from secure_tools.secrets_broker import SecretReference, SecretsBroker, ToolResult
 
 
 class TestSecretsBroker:
@@ -51,7 +51,7 @@ class TestSecretsBroker:
         """Calling an unregistered tool should fail safely."""
         broker = SecretsBroker()
 
-        from src.tools import ToolCall
+        from secure_tools.tools import ToolCall
 
         call = ToolCall(id="test", name="nonexistent_tool", arguments={})
 
@@ -72,7 +72,7 @@ class TestSecretsBroker:
         # Register without actual 1Password (will have empty secrets)
         broker.register_tool("test_tool", test_executor, secrets=[])
 
-        from src.tools import ToolCall
+        from secure_tools.tools import ToolCall
 
         call = ToolCall(id="test", name="test_tool", arguments={"foo": "bar"})
 

@@ -118,4 +118,4 @@ python run.py list-tools                        # List tools
 
 - See `docs/1password-setup.md` for detailed 1Password configuration
 - Read the architecture in `readme.md`
-- Add your own tools in `src/tools/`
+- Add your own tools in `secure_tools/tools/`

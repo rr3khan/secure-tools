@@ -6,9 +6,9 @@ These tests verify the LLM-facing component's behaviour.
 
 import pytest
 
-from src.config import config
-from src.orchestrator import Message, Orchestrator
-from src.secrets_broker import SecretsBroker
+from secure_tools.config import config
+from secure_tools.orchestrator import Message, Orchestrator
+from secure_tools.secrets_broker import SecretsBroker
 
 
 class TestOrchestrator:

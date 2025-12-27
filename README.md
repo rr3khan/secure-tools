@@ -337,7 +337,7 @@ secure-tools/
 ├── run.py                    # CLI entry point
 ├── requirements.txt          # Dependencies
 ├── pyproject.toml           # Package configuration
-├── src/
+├── secure_tools/
 │   ├── __init__.py
 │   ├── config.py            # Configuration management
 │   ├── orchestrator.py      # LLM-facing component (untrusted)

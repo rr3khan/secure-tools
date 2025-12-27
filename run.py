@@ -9,7 +9,7 @@ Usage:
     python run.py list-tools
 """
 
-from src.main import main
+from secure_tools.main import main
 
 if __name__ == "__main__":
     main()
