@@ -1,0 +1,159 @@
+# https://taskfile.dev
+version: "3"
+
+vars:
+  VENV: venv
+  PYTHON: "{{.VENV}}/bin/python"
+  PIP: "{{.VENV}}/bin/pip"
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  setup:
+    desc: Create venv and install all dependencies (run this first)
+    cmds:
+      - echo "🔧 Setting up Secure Tool Runner..."
+      - python3 -m venv {{.VENV}}
+      - echo "✅ Virtual environment created"
+      - "{{.PIP}} install --upgrade pip -q"
+      - "{{.PIP}} install -r requirements.txt -q"
+      - echo "✅ Dependencies installed"
+      - "{{.PIP}} install pytest -q"
+      - echo "✅ Test dependencies installed"
+      - echo ""
+      - echo "🎉 Setup complete! Run 'task chat' to start."
+    status:
+      - test -d {{.VENV}}
+
+  install:
+    desc: Install dependencies only (assumes venv exists)
+    deps: [setup]
+    cmds:
+      - "{{.PIP}} install -r requirements.txt"
+
+  chat:
+    desc: "Start interactive chat session (supports flags: task chat -- --seed 42)"
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} run.py chat {{.CLI_ARGS}}"
+    interactive: true
+
+  demo:
+    desc: Run a demo query (weather in Paris) - uses mock data
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} run.py chat --single 'What is the weather today in Paris?' --seed 42"
+
+  demo:live:
+    desc: Test real OpenWeatherMap API with 1Password secret (direct)
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} run.py test-weather-api --location Paris"
+
+  demo:live:location:
+    desc: Test real API with custom location (usage - task demo:live:location -- "Tokyo")
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} run.py test-weather-api --location '{{.CLI_ARGS}}'"
+
+  demo:live:chat:
+    desc: Full E2E flow - LLM → Tool Call → 1Password → Real API
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} run.py chat --live --single 'What is the weather in Paris right now?' --seed 42"
+
+  chat:live:
+    desc: "Interactive chat with real 1Password secrets (supports flags: task chat:live -- --seed 42)"
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} run.py chat --live {{.CLI_ARGS}}"
+    interactive: true
+
+  test:
+    desc: Run all tests
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} -m pytest tests/ -v"
+
+  check:
+    desc: Verify Ollama and 1Password connections
+    deps: [setup]
+    cmds:
+      - echo "Checking Ollama..."
+      - "{{.PYTHON}} run.py test-connection"
+      - echo ""
+      - echo "Checking 1Password..."
+      - "{{.PYTHON}} run.py test-onepassword || true"
+
+  tools:
+    desc: List available tools
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} run.py list-tools"
+
+  help:
+    desc: Show comprehensive usage guide
+    deps: [setup]
+    cmds:
+      - "{{.PYTHON}} run.py help"
+
+  lint:
+    desc: Run linter (ruff)
+    deps: [setup:dev]
+    cmds:
+      - "{{.PYTHON}} -m ruff check ."
+
+  lint:fix:
+    desc: Fix linting issues automatically
+    deps: [setup:dev]
+    cmds:
+      - "{{.PYTHON}} -m ruff check --fix ."
+      - "{{.PYTHON}} -m ruff format ."
+
+  format:
+    desc: Format code with ruff
+    deps: [setup:dev]
+    cmds:
+      - "{{.PYTHON}} -m ruff format ."
+
+  typecheck:
+    desc: Run type checker (mypy) - warnings only
+    deps: [setup:dev]
+    cmds:
+      - "{{.PYTHON}} -m mypy secure_tools/ --ignore-missing-imports || echo '⚠ Type check has warnings (non-blocking)'"
+
+  security:
+    desc: Run security scan (bandit)
+    deps: [setup:dev]
+    cmds:
+      - "{{.PYTHON}} -m bandit -r secure_tools/ -c pyproject.toml"
+
+  ci:
+    desc: Run all CI checks (lint, typecheck, security, test)
+    deps: [setup:dev]
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: security
+      - task: test
+
+  setup:dev:
+    desc: Install dev dependencies (linting, testing, etc.)
+    deps: [setup]
+    cmds:
+      - "{{.PIP}} install -e '.[dev]' -q"
+    status:
+      - test -f {{.VENV}}/bin/ruff
+
+  clean:
+    desc: Remove venv and cache files
+    cmds:
+      - echo "🧹 Cleaning up..."
+      - rm -rf {{.VENV}}
+      - rm -rf __pycache__ secure_tools/__pycache__ secure_tools/tools/__pycache__ tests/__pycache__
+      - rm -rf .pytest_cache .mypy_cache .ruff_cache
+      - rm -rf *.egg-info
+      - echo "✅ Cleaned"
