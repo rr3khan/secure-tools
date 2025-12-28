@@ -47,6 +47,9 @@ def chat(
     live: bool = typer.Option(
         False, "--live", "-l", help="Require real secrets from 1Password (no mock fallback)"
     ),
+    seed: int | None = typer.Option(
+        None, "--seed", help="Random seed for reproducible outputs (same seed = same response)"
+    ),
 ):
     """
     Start an interactive chat session with tool support.
@@ -58,13 +61,15 @@ def chat(
     """
     # Update config
     config.ollama.model = model
+    config.ollama.seed = seed
     config.onepassword.vault = vault
 
     mode_label = "[green]LIVE[/green]" if live else "[yellow]MOCK[/yellow]"
+    seed_label = f"[cyan]{seed}[/cyan]" if seed is not None else "[dim]random[/dim]"
     console.print(
         Panel.fit(
             "[bold cyan]Secure Tool Runner[/bold cyan]\n"
-            f"Model: {model} | Vault: {vault} | Mode: {mode_label}\n"
+            f"Model: {model} | Vault: {vault} | Mode: {mode_label} | Seed: {seed_label}\n"
             "[dim]Type 'exit' or 'quit' to end the session[/dim]",
             border_style="cyan",
         )

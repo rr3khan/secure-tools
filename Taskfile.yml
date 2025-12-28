@@ -35,17 +35,17 @@ tasks:
       - "{{.PIP}} install -r requirements.txt"
 
   chat:
-    desc: Start interactive chat session
+    desc: "Start interactive chat session (supports flags: task chat -- --seed 42)"
     deps: [setup]
     cmds:
-      - "{{.PYTHON}} run.py chat"
+      - "{{.PYTHON}} run.py chat {{.CLI_ARGS}}"
     interactive: true
 
   demo:
     desc: Run a demo query (weather in Paris) - uses mock data
     deps: [setup]
     cmds:
-      - "{{.PYTHON}} run.py chat --single 'What is the weather today in Paris?'"
+      - "{{.PYTHON}} run.py chat --single 'What is the weather today in Paris?' --seed 42"
 
   demo:live:
     desc: Test real OpenWeatherMap API with 1Password secret (direct)
@@ -63,13 +63,13 @@ tasks:
     desc: Full E2E flow - LLM → Tool Call → 1Password → Real API
     deps: [setup]
     cmds:
-      - "{{.PYTHON}} run.py chat --live --single 'What is the weather in Paris right now?'"
+      - "{{.PYTHON}} run.py chat --live --single 'What is the weather in Paris right now?' --seed 42"
 
   chat:live:
-    desc: Interactive chat with real 1Password secrets (no mock fallback)
+    desc: "Interactive chat with real 1Password secrets (supports flags: task chat:live -- --seed 42)"
     deps: [setup]
     cmds:
-      - "{{.PYTHON}} run.py chat --live"
+      - "{{.PYTHON}} run.py chat --live {{.CLI_ARGS}}"
     interactive: true
 
   test:

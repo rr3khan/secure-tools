@@ -15,6 +15,9 @@ class OllamaConfig(BaseModel):
     base_url: str = Field(default="http://localhost:11434")
     model: str = Field(default="llama3.1:8b")
     timeout: float = Field(default=120.0)
+    # Seed for reproducible outputs. If set, the same input will produce the same output.
+    # Set to None for random (non-deterministic) behaviour.
+    seed: int | None = Field(default=None)
 
 
 class OnePasswordConfig(BaseModel):

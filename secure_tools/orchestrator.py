@@ -111,6 +111,10 @@ You have access to tools that can fetch real-time data. Use them when appropriat
         """
         payload = {"model": config.ollama.model, "messages": messages, "stream": False}
 
+        # Add options for reproducible outputs if seed is configured
+        if config.ollama.seed is not None:
+            payload["options"] = {"seed": config.ollama.seed}
+
         if include_tools:
             tools = self.get_tool_definitions()
             if tools:
