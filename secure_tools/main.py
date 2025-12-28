@@ -399,6 +399,7 @@ python run.py chat --help          # See all chat options
 python run.py chat --live          # Require real secrets
 python run.py chat --model qwen2   # Use different model
 python run.py chat --single "..."  # Single message mode
+python run.py chat --seed 42       # Reproducible outputs (same seed = same response for same input)
 ```
 
 ## Setting Up 1Password
