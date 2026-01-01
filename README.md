@@ -1,5 +1,11 @@
 # Secure Tool Runner (Ollama + 1Password)
 
+### 🎬 Demo
+
+https://github.com/user-attachments/assets/YOUR_VIDEO_ID
+
+---
+
 ## Overview
 
 This project demonstrates a **Secure agent execution pattern** for local LLMs using **Ollama** and **1Password**.
