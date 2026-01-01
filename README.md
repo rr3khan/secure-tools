@@ -280,98 +280,26 @@ It is a practical example of **Security for AI** and **AI for Security** princip
 
 ---
 
----
-
 ## Quick Start
 
-Install [Task](https://taskfile.dev/) and run setup:
-
 ```bash
-brew install go-task
-task setup
+brew install go-task    # Install Task runner
+task setup              # Create venv & install deps
+task chat               # Start chatting
 ```
 
-Start chatting:
-
-```bash
-task chat
-```
-
-Or run a demo:
-
-```bash
-task demo
-```
-
-All available commands:
-
-```bash
-task setup           # Create venv & install deps
-task chat            # Interactive chat session
-task demo            # Demo query (mock data)
-task demo:live       # Test real API with 1Password
-task test            # Run all tests
-task check           # Verify Ollama & 1Password
-task tools           # List available tools
-task clean           # Clean up
-```
-
-### Example Session
-
-```
-$ python run.py chat --single "What is the weather today in Tokyo?"
-
-╭──────────────────────────────────────────╮
-│ Secure Tool Runner                   │
-│ Model: llama3.1:8b | Vault: SecureTools  │
-╰──────────────────────────────────────────╯
-
-🔧 Tool call: get_current_weather({'format': 'celsius', 'location': 'Tokyo'})
-✅ Tool result: 98 chars
-
-╭───────────────────────────────── Assistant ──────────────────────────────────╮
-│ The current weather in Tokyo is 18°C with sunny conditions.                 │
-╰──────────────────────────────────────────────────────────────────────────────╯
-```
+📖 **[Full Quick Start Guide](docs/quickstart.md)**
 
 ---
 
-## Project Structure
+## 1Password Setup (Production Mode)
 
-```
-secure-tools/
-├── run.py                    # CLI entry point
-├── requirements.txt          # Dependencies
-├── pyproject.toml           # Package configuration
-├── secure_tools/
-│   ├── __init__.py
-│   ├── config.py            # Configuration management
-│   ├── orchestrator.py      # LLM-facing component (untrusted)
-│   ├── secrets_broker.py    # Trusted execution boundary
-│   ├── main.py              # CLI commands
-│   └── tools/
-│       ├── __init__.py      # Tool registry & definitions
-│       ├── executors.py     # Tool implementations
-│       └── setup.py         # Tool registration
-├── tests/                   # Test suite
-└── docs/
-    ├── quickstart.md        # Getting started guide
-    └── 1password-setup.md   # 1Password configuration
+To use real API keys instead of mock data:
+
+```bash
+brew install 1password-cli
+op signin
+task chat:live
 ```
 
----
-
-## With 1Password (Production Mode)
-
-1. Install 1Password CLI: `brew install 1password-cli`
-2. Sign in: `op signin`
-3. Create vault and secrets:
-   ```bash
-   op vault create SecureTools
-   op item create --category=api_credential \
-     --title="WeatherAPI" --vault="SecureTools" \
-     api_key="your-openweathermap-key"
-   ```
-4. Run with real secrets: `python run.py chat`
-
-See `docs/1password-setup.md` for detailed instructions.
+🔐 **[Full 1Password Setup Guide](docs/1password-setup.md)**
