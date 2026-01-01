@@ -35,18 +35,6 @@ class TestSecretsBroker:
         assert "secret-auth-token" not in scrubbed
         assert scrubbed.count("[REDACTED]") == 2
 
-    def test_scrub_output_ignores_short_secrets(self):
-        """Very short strings shouldn't be scrubbed (might be false positives)."""
-        broker = SecretsBroker()
-
-        secrets = {"pin": "1234"}  # 4 chars, too short
-        content = "Your code is 1234"
-
-        scrubbed = broker._scrub_output(content, secrets)
-
-        # Short secrets are not scrubbed to avoid false positives
-        assert scrubbed == content
-
     def test_unregistered_tool_fails(self):
         """Calling an unregistered tool should fail safely."""
         broker = SecretsBroker()

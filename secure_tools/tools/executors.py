@@ -20,6 +20,9 @@ import httpx
 
 from . import ToolResult
 
+# Timeout for external API requests
+API_REQUEST_TIMEOUT_SECONDS = 10
+
 # =============================================================================
 # Weather Tool Executor
 # =============================================================================
@@ -108,7 +111,7 @@ def _real_weather_api(location: str, temp_format: str, api_key: str) -> ToolResu
         "units": units,
     }
 
-    with httpx.Client(timeout=10) as client:
+    with httpx.Client(timeout=API_REQUEST_TIMEOUT_SECONDS) as client:
         response = client.get(url, params=params)
         response.raise_for_status()
         data = response.json()

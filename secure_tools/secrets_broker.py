@@ -21,6 +21,9 @@ from .tools import ToolCall, ToolResult
 
 console = Console()
 
+# Timeout for 1Password CLI operations
+OP_CLI_TIMEOUT_SECONDS = 30
+
 
 class SecretReference(BaseModel):
     """
@@ -73,7 +76,10 @@ class SecretsBroker:
         self._secret_cache: dict[str, str] = {}
 
     def register_tool(
-        self, name: str, executor: ToolExecutor, secrets: list[SecretReference] | None = None
+        self,
+        name: str,
+        executor: ToolExecutor,
+        secrets: list[SecretReference] | None = None,
     ):
         """
         Register a tool with the broker.
@@ -114,7 +120,13 @@ class SecretsBroker:
             env["OP_SERVICE_ACCOUNT_TOKEN"] = config.onepassword.service_account_token
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=30)
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=OP_CLI_TIMEOUT_SECONDS,
+            )
 
             if result.returncode != 0:
                 error_msg = result.stderr.strip()
@@ -181,7 +193,7 @@ class SecretsBroker:
         """
         scrubbed = content
         for secret in secrets.values():
-            if secret and len(secret) > 4:  # Only scrub non-trivial secrets
+            if secret:
                 scrubbed = scrubbed.replace(secret, "[REDACTED]")
         return scrubbed
 
@@ -198,7 +210,8 @@ class SecretsBroker:
         """
         if call.name not in self._executors:
             return ToolResult(
-                success=False, content=f"Tool '{call.name}' not registered with secrets broker"
+                success=False,
+                content=f"Tool '{call.name}' not registered with secrets broker",
             )
 
         executor = self._executors[call.name]

@@ -21,6 +21,9 @@ from .tools import ToolCall, ToolResult, tool_registry
 
 console = Console()
 
+# Maximum characters to include in error messages from API responses
+ERROR_RESPONSE_TRUNCATE_LENGTH = 200
+
 
 class OllamaError(Exception):
     """Base exception for Ollama-related errors."""
@@ -134,8 +137,9 @@ You have access to tools that can fetch real-time data. Use them when appropriat
                 "The model may be loading or the request is too complex."
             ) from e
         except httpx.HTTPStatusError as e:
+            truncated_response = e.response.text[:ERROR_RESPONSE_TRUNCATE_LENGTH]
             raise OllamaResponseError(
-                f"Ollama returned HTTP {e.response.status_code}: {e.response.text[:200]}"
+                f"Ollama returned HTTP {e.response.status_code}: {truncated_response}"
             ) from e
         except httpx.HTTPError as e:
             raise OllamaConnectionError(f"HTTP error communicating with Ollama: {e}") from e
@@ -144,7 +148,8 @@ You have access to tools that can fetch real-time data. Use them when appropriat
         try:
             data: dict = response.json()
         except ValueError as e:
-            raise OllamaResponseError(f"Ollama returned invalid JSON: {response.text[:200]}") from e
+            truncated_response = response.text[:ERROR_RESPONSE_TRUNCATE_LENGTH]
+            raise OllamaResponseError(f"Ollama returned invalid JSON: {truncated_response}") from e
 
         # Validate expected response structure
         if "message" not in data:
@@ -220,12 +225,12 @@ You have access to tools that can fetch real-time data. Use them when appropriat
             # Convert conversation to Ollama format, starting with system prompt
             messages: list[dict] = [{"role": "system", "content": self.SYSTEM_PROMPT}]
             for msg in self.conversation:
-                m: dict = {"role": msg.role, "content": msg.content}
+                message_dict: dict = {"role": msg.role, "content": msg.content}
                 if msg.tool_calls:
-                    m["tool_calls"] = msg.tool_calls
+                    message_dict["tool_calls"] = msg.tool_calls
                 if msg.tool_call_id:
-                    m["tool_call_id"] = msg.tool_call_id
-                messages.append(m)
+                    message_dict["tool_call_id"] = msg.tool_call_id
+                messages.append(message_dict)
 
             # Call Ollama (errors bubble up with clear messages)
             response = self._call_ollama(messages)
@@ -254,9 +259,9 @@ You have access to tools that can fetch real-time data. Use them when appropriat
                 )
 
                 # Execute each tool call
-                for tc in tool_calls:
+                for raw_tool_call in tool_calls:
                     try:
-                        validated_call = self._validate_tool_call(tc)
+                        validated_call = self._validate_tool_call(raw_tool_call)
                         result = self._execute_tool(validated_call)
 
                         # Add tool result to conversation
@@ -271,7 +276,7 @@ You have access to tools that can fetch real-time data. Use them when appropriat
                             Message(
                                 role="tool",
                                 content=f"Error executing tool: {str(e)}",
-                                tool_call_id=tc.get("id", "unknown"),
+                                tool_call_id=raw_tool_call.get("id", "unknown"),
                             )
                         )
 
