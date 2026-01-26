@@ -215,7 +215,13 @@ def test_onepassword(
 @app.command()
 def list_tools():
     """List available tools and their requirements."""
+    from .secrets_broker import SecretsBroker
     from .tools import tool_registry
+    from .tools.setup import setup_tools
+
+    # Load tools from config (needed since registry is populated at runtime)
+    broker = SecretsBroker()
+    setup_tools(broker)
 
     console.print(Panel.fit("[bold]Available Tools[/bold]", border_style="cyan"))
     console.print()

@@ -35,7 +35,8 @@ class ToolDefinition(BaseModel):
 
 
 # The tool registry - maps tool names to their definitions
-# Populated at runtime by loader.py from config/tools.yml
+# Populated at runtime by setup_tools() from secure_tools/tool_configs/tools.yml
+# IMPORTANT: This is empty until setup_tools() is called
 tool_registry: dict[str, ToolDefinition] = {}
 
 
