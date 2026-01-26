@@ -62,6 +62,7 @@ select = [
 ]
 ignore = [
     "S101",   # assert statements (fine in tests)
+    "S105",   # hardcoded password (test values, not real secrets)
     "S603",   # subprocess without shell=True (intentional)
     "S607",   # partial path to executable (we use full paths)
     "W293",   # blank line contains whitespace (in docstrings)

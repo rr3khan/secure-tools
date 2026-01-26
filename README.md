@@ -297,11 +297,13 @@ tools:
           type: string
       required: ["location"]
     secrets:
-      - item: "WeatherAPI"      # 1Password item name
-        field: "api_key"        # Field within the item
+      # Supports both env vars and 1Password (env checked first)
+      - env: "OPENWEATHER_API_KEY"   # Environment variable
+        item: "WeatherAPI"            # 1Password item (fallback)
+        field: "api_key"
 ```
 
-The **vault** is specified via CLI (`--vault SecureTools`). At runtime, secrets are resolved by combining vault + item + field into a 1Password reference: `op://SecureTools/WeatherAPI/api_key`
+Secrets are resolved in order: **env var first**, then **1Password CLI**. This supports [1Password Environments](https://developer.1password.com/docs/environments/), CI/CD pipelines, and traditional 1Password CLI workflows.
 
 ---
 

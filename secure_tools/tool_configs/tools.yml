@@ -4,9 +4,15 @@
 #
 # Each tool requires:
 #   - description: What the tool does (shown to LLM)
-#   - executor: Name of the executor function in executors.py
+#   - executor: Executor key (must match a key in TOOL_EXECUTORS)
 #   - parameters: JSON Schema for the tool's arguments
-#   - secrets: List of 1Password secret references (item + field)
+#   - secrets: List of secret references
+#
+# Secret sources (checked in order):
+#   1. env: Environment variable (for 1Password Environments, CI/CD, Docker)
+#   2. item/field: 1Password reference (traditional op:// workflow)
+#
+# You can specify both for flexibility (env takes priority, 1Password as fallback)
 
 tools:
   get_current_weather:
@@ -24,7 +30,9 @@ tools:
           enum: ["celsius", "fahrenheit"]
       required: ["location", "format"]
     secrets:
-      - item: "WeatherAPI"
+      # Supports both env var and 1Password (env checked first)
+      - env: "OPENWEATHER_API_KEY"
+        item: "WeatherAPI"
         field: "api_key"
 
   get_protected_status:
@@ -38,7 +46,8 @@ tools:
           description: "The project identifier to check"
       required: ["project"]
     secrets:
-      - item: "InternalAPI"
+      - env: "INTERNAL_API_TOKEN"
+        item: "InternalAPI"
         field: "auth_token"
 
   list_available_services:

@@ -94,7 +94,7 @@ Examples:
 
 ## How Secrets Are Configured
 
-Secret references are defined in `secure_tools/tool_configs/tools.yml`, **not** in Python code. Each tool specifies which 1Password items it needs:
+Secret references are defined in `secure_tools/tool_configs/tools.yml`, **not** in Python code. Each tool specifies which secrets it needs:
 
 ```yaml
 # secure_tools/tool_configs/tools.yml
@@ -105,25 +105,42 @@ tools:
     parameters:
       # ... parameter schema ...
     secrets:
-      - item: "WeatherAPI"      # 1Password item name
-        field: "api_key"        # Field within the item
+      # Supports both env vars and 1Password
+      - env: "OPENWEATHER_API_KEY"   # Environment variable (checked first)
+        item: "WeatherAPI"            # 1Password item (fallback)
+        field: "api_key"
 ```
 
-The **vault** is specified separately via CLI:
+### Secret Resolution Order
+
+Secrets are resolved in this order:
+1. **Environment variable** (`env`) - if set in environment
+2. **1Password CLI** (`item`/`field`) - via `op read op://vault/item/field`
+
+You can configure either or both. If both are set, env var takes priority.
+
+### Using Environment Variables
+
+Environment variables work with:
+- **[1Password Environments](https://developer.1password.com/docs/environments/)** - Sync secrets to local `.env` files
+- **CI/CD pipelines** - GitHub Actions, GitLab CI, etc.
+- **Docker** - Pass secrets via `-e` flag
+- **Manual** - `export OPENWEATHER_API_KEY=your-key`
+
+### Using 1Password CLI
+
+The **vault** is specified via CLI:
 
 ```bash
 python run.py chat --vault SecureTools
 ```
 
-At runtime, the system combines these to create the full reference:
-- Vault (from CLI): `SecureTools`
-- Item (from YAML): `WeatherAPI`
-- Field (from YAML): `api_key`
-- **Result**: `op://SecureTools/WeatherAPI/api_key`
+At runtime, the system combines vault + item + field:
+- `op://SecureTools/WeatherAPI/api_key`
 
-This separation allows:
+This flexibility allows:
 - Same config file across environments
-- Different vaults for dev/staging/prod
+- Different secret sources for dev/staging/prod
 - Easy auditing of which tools need which secrets
 
 ## Security Best Practices

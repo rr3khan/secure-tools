@@ -132,11 +132,19 @@ tools:
           description: "The location to get weather for"
       required: ["location"]
     secrets:
-      - item: "WeatherAPI"      # 1Password item name
-        field: "api_key"        # Field within the item
+      # Supports both env vars and 1Password (env checked first)
+      - env: "OPENWEATHER_API_KEY"   # Environment variable
+        item: "WeatherAPI"            # 1Password item (fallback)
+        field: "api_key"
 ```
 
-The **vault** is specified via CLI (`--vault SecureTools`), and combined with `item` and `field` to create the full 1Password reference: `op://SecureTools/WeatherAPI/api_key`
+### Secret Resolution Order
+
+Secrets are resolved in this order:
+1. **Environment variable** (`env`) - for [1Password Environments](https://developer.1password.com/docs/environments/), CI/CD, Docker
+2. **1Password CLI** (`item`/`field`) - traditional `op://` workflow
+
+You can configure either or both. If both are set, env var takes priority.
 
 ## Next Steps
 
@@ -176,13 +184,18 @@ TOOL_EXECUTORS = {
         # ... your parameters ...
       required: []
     secrets:
-      - item: "MyAPICredential"
+      - env: "MY_API_KEY"           # Environment variable (optional)
+        item: "MyAPICredential"      # 1Password item (optional)
         field: "api_key"
 ```
 
-4. **Add the secret** to 1Password:
+4. **Provide the secret** via env var OR 1Password:
 
 ```bash
+# Option A: Environment variable
+export MY_API_KEY="your-api-key"
+
+# Option B: 1Password
 op item create --category="API Credential" \
   --title="MyAPICredential" --vault="SecureTools" \
   api_key="your-api-key"

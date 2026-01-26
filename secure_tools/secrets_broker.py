@@ -10,6 +10,7 @@ All secrets stay within this boundary. Results are sanitized
 before being returned to the orchestrator.
 """
 
+import os
 import subprocess
 from collections.abc import Callable
 
@@ -27,19 +28,41 @@ OP_CLI_TIMEOUT_SECONDS = 30
 
 class SecretReference(BaseModel):
     """
-    A reference to a secret in 1Password.
+    A reference to a secret, supporting multiple sources.
 
-    Format: op://<vault>/<item>/<field>
-    Example: op://SecureTools/WeatherAPI/api_key
+    Sources (checked in order):
+    1. Environment variable (env_var) - for 1Password Environments, CI/CD, Docker
+    2. 1Password CLI (vault/item/field) - traditional op:// references
+
+    Examples:
+        - env_var only: SecretReference(env_var="WEATHER_API_KEY", field="api_key")
+        - 1Password only: SecretReference(vault="V", item="I", field="api_key")
+        - Both (env preferred): SecretReference(env_var="KEY", vault="V", item="I", field="f")
     """
 
-    vault: str
-    item: str
+    # Environment variable name (checked first)
+    env_var: str | None = None
+    # 1Password reference (fallback)
+    vault: str | None = None
+    item: str | None = None
     field: str = "password"
 
     @property
-    def uri(self) -> str:
-        return f"op://{self.vault}/{self.item}/{self.field}"
+    def uri(self) -> str | None:
+        """1Password URI, or None if not configured."""
+        if self.vault and self.item:
+            return f"op://{self.vault}/{self.item}/{self.field}"
+        return None
+
+    @property
+    def has_op_reference(self) -> bool:
+        """Whether this has a 1Password reference configured."""
+        return self.vault is not None and self.item is not None
+
+    @property
+    def has_env_var(self) -> bool:
+        """Whether this has an environment variable configured."""
+        return self.env_var is not None
 
 
 # Type alias for tool execution functions
@@ -93,15 +116,32 @@ class SecretsBroker:
         if secrets:
             self._secret_refs[name] = secrets
 
-    def _get_secret(self, ref: SecretReference) -> str:
+    def _get_secret_from_env(self, ref: SecretReference) -> str | None:
         """
-        Retrieve a secret from 1Password.
+        Try to get secret from environment variable.
+
+        Returns None if env_var is not configured or not set.
+        """
+        if not ref.has_env_var:
+            return None
+
+        value = os.environ.get(ref.env_var)
+        if value:
+            return value
+        return None
+
+    def _get_secret_from_op(self, ref: SecretReference) -> str:
+        """
+        Retrieve a secret from 1Password CLI.
 
         Uses the 1Password CLI (op) to fetch secrets.
         Supports both service account and interactive auth.
 
-        SECURITY: This is the ONLY place secrets are fetched.
+        SECURITY: This is the ONLY place 1Password secrets are fetched.
         """
+        if not ref.has_op_reference:
+            raise RuntimeError("No 1Password reference configured for this secret")
+
         cache_key = ref.uri
 
         # Check cache first
@@ -112,11 +152,8 @@ class SecretsBroker:
         cmd = ["op", "read", ref.uri]
 
         # Set up environment
-        env = None
+        env = os.environ.copy()
         if config.onepassword.service_account_token:
-            import os
-
-            env = os.environ.copy()
             env["OP_SERVICE_ACCOUNT_TOKEN"] = config.onepassword.service_account_token
 
         try:
@@ -148,11 +185,41 @@ class SecretsBroker:
                 "1Password CLI (op) not found. Install it with: brew install 1password-cli"
             )
 
+    def _get_secret(self, ref: SecretReference) -> str:
+        """
+        Retrieve a secret, trying sources in order.
+
+        Resolution order:
+        1. Environment variable (if configured)
+        2. 1Password CLI (if configured)
+
+        SECURITY: This is the ONLY place secrets are fetched.
+        """
+        # Try environment variable first
+        if ref.has_env_var:
+            env_value = self._get_secret_from_env(ref)
+            if env_value:
+                return env_value
+
+        # Fall back to 1Password
+        if ref.has_op_reference:
+            return self._get_secret_from_op(ref)
+
+        # Neither configured
+        raise RuntimeError(
+            f"No secret source configured for field '{ref.field}'. "
+            "Set either env_var or vault/item in tools.yml."
+        )
+
     def _resolve_secrets(self, tool_name: str) -> dict[str, str]:
         """
         Resolve all secrets needed by a tool.
 
         Returns a dict mapping field names to secret values.
+
+        Resolution order for each secret:
+        1. Environment variable (if configured)
+        2. 1Password CLI (if configured)
 
         Behavior depends on require_secrets:
         - If False: returns empty dict on failure (mock mode)
@@ -163,20 +230,33 @@ class SecretsBroker:
 
         for ref in refs:
             try:
-                secrets[ref.field] = self._get_secret(ref)
-                console.print(f"[green]🔑 Secret loaded: {ref.item}/{ref.field}[/green]")
+                # Try to get the secret (env var first, then 1Password)
+                secret_value = self._get_secret(ref)
+                secrets[ref.field] = secret_value
+
+                # Log which source was used
+                if ref.has_env_var and os.environ.get(ref.env_var):
+                    console.print(f"[green]🔑 Secret loaded from env: {ref.env_var}[/green]")
+                elif ref.has_op_reference:
+                    console.print(
+                        f"[green]🔑 Secret loaded from 1Password: {ref.item}/{ref.field}[/green]"
+                    )
+
             except Exception as e:
+                # Determine the secret identifier for error messages
+                secret_id = ref.env_var if ref.has_env_var else f"{ref.item}/{ref.field}"
+
                 if self.require_secrets:
                     # Live mode - secrets are required
-                    console.print(f"[red]✗ Secret required: {ref.item}/{ref.field}[/red]")
+                    console.print(f"[red]✗ Secret required: {secret_id}[/red]")
                     raise RuntimeError(
-                        f"Secret '{ref.item}/{ref.field}' is required but unavailable. "
-                        f"Run 'task demo:live' to test 1Password setup."
+                        f"Secret '{secret_id}' is required but unavailable. "
+                        f"Set the environment variable or configure 1Password."
                     ) from e
                 else:
                     # Mock mode - continue without secret
                     console.print(
-                        f"[yellow]⚠ Secret unavailable: {ref.item}/{ref.field} - mock mode[/yellow]"
+                        f"[yellow]⚠ Secret unavailable: {secret_id} - mock mode[/yellow]"
                     )
 
         return secrets

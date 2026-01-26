@@ -17,9 +17,36 @@ from .executors import TOOL_EXECUTORS
 
 
 class SecretConfig(BaseModel):
-    """Secret reference configuration from YAML."""
+    """
+    Secret reference configuration from YAML.
 
-    item: str
+    Supports multiple secret sources (checked in order):
+    1. Environment variable (env) - for 1Password Environments, CI/CD, Docker
+    2. 1Password reference (item/field) - traditional op:// references
+
+    Examples in tools.yml:
+        # Environment variable only
+        secrets:
+          - env: "WEATHER_API_KEY"
+            field: "api_key"
+
+        # 1Password only
+        secrets:
+          - item: "WeatherAPI"
+            field: "api_key"
+
+        # Both (env takes priority)
+        secrets:
+          - env: "WEATHER_API_KEY"
+            item: "WeatherAPI"
+            field: "api_key"
+    """
+
+    # Environment variable name (checked first)
+    env: str | None = None
+    # 1Password item name (fallback)
+    item: str | None = None
+    # Field name (used as key in secrets dict passed to executor)
     field: str = "password"
 
 
@@ -152,7 +179,12 @@ def setup_tools_from_config(
 
         # Build secret references
         secret_refs = [
-            SecretReference(vault=vault, item=secret.item, field=secret.field)
+            SecretReference(
+                env_var=secret.env,
+                vault=vault if secret.item else None,
+                item=secret.item,
+                field=secret.field,
+            )
             for secret in tool_config.secrets
         ]
 
