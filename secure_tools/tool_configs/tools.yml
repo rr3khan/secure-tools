@@ -1,0 +1,51 @@
+# Tool Configuration
+# Defines available tools, their schemas, and secret requirements.
+# Vault is configured separately via CLI or environment.
+#
+# Each tool requires:
+#   - description: What the tool does (shown to LLM)
+#   - executor: Name of the executor function in executors.py
+#   - parameters: JSON Schema for the tool's arguments
+#   - secrets: List of 1Password secret references (item + field)
+
+tools:
+  get_current_weather:
+    description: "Get the current weather for a location. Returns temperature and conditions."
+    executor: "get_current_weather"
+    parameters:
+      type: object
+      properties:
+        location:
+          type: string
+          description: "The location to get weather for, e.g. 'Paris, France'"
+        format:
+          type: string
+          description: "Temperature format: 'celsius' or 'fahrenheit'"
+          enum: ["celsius", "fahrenheit"]
+      required: ["location", "format"]
+    secrets:
+      - item: "WeatherAPI"
+        field: "api_key"
+
+  get_protected_status:
+    description: "Check the protected status for a project. Requires authentication."
+    executor: "get_protected_status"
+    parameters:
+      type: object
+      properties:
+        project:
+          type: string
+          description: "The project identifier to check"
+      required: ["project"]
+    secrets:
+      - item: "InternalAPI"
+        field: "auth_token"
+
+  list_available_services:
+    description: "List services that are available for queries. Does not expose credentials."
+    executor: "list_available_services"
+    parameters:
+      type: object
+      properties: {}
+      required: []
+    secrets: []

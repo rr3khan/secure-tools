@@ -114,8 +114,78 @@ python run.py list-tools                        # List tools
 9. **Ollama responds** → Generates natural language answer
 10. **You see the result** → Secrets never exposed to the LLM
 
+## Tool Configuration
+
+Tools are defined in `secure_tools/tool_configs/tools.yml`, not in Python code. This makes it easy to add or modify tools without changing code.
+
+```yaml
+# secure_tools/tool_configs/tools.yml
+tools:
+  get_current_weather:
+    description: "Get the current weather for a location."
+    executor: "get_current_weather"
+    parameters:
+      type: object
+      properties:
+        location:
+          type: string
+          description: "The location to get weather for"
+      required: ["location"]
+    secrets:
+      - item: "WeatherAPI"      # 1Password item name
+        field: "api_key"        # Field within the item
+```
+
+The **vault** is specified via CLI (`--vault SecureTools`), and combined with `item` and `field` to create the full 1Password reference: `op://SecureTools/WeatherAPI/api_key`
+
 ## Next Steps
 
 - See `docs/1password-setup.md` for detailed 1Password configuration
-- Read the architecture in `readme.md`
-- Add your own tools in `secure_tools/tools/`
+- Read the architecture in `README.md`
+- Add your own tools - see [Adding New Tools](#adding-new-tools) below
+
+## Adding New Tools
+
+1. **Create the executor** in `secure_tools/tools/executors.py`:
+
+```python
+def execute_my_new_tool(arguments: dict, secrets: dict) -> ToolResult:
+    api_key = secrets.get("api_key")
+    # ... your tool logic ...
+    return ToolResult(success=True, content=json.dumps(result))
+```
+
+2. **Register the executor** in `TOOL_EXECUTORS` dict (same file):
+
+```python
+TOOL_EXECUTORS = {
+    # ... existing tools ...
+    "my_new_tool": execute_my_new_tool,
+}
+```
+
+3. **Add config** to `secure_tools/tool_configs/tools.yml`:
+
+```yaml
+  my_new_tool:
+    description: "What this tool does"
+    executor: "my_new_tool"
+    parameters:
+      type: object
+      properties:
+        # ... your parameters ...
+      required: []
+    secrets:
+      - item: "MyAPICredential"
+        field: "api_key"
+```
+
+4. **Add the secret** to 1Password:
+
+```bash
+op item create --category="API Credential" \
+  --title="MyAPICredential" --vault="SecureTools" \
+  api_key="your-api-key"
+```
+
+That's it! No changes needed to setup.py or other files.

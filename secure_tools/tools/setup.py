@@ -1,40 +1,35 @@
 """
 Tool Setup - Registers tools with the Secrets Broker.
 
-This module connects tool definitions to their executors and
-specifies which secrets each tool needs.
+Tools are loaded from secure_tools/tool_configs/tools.yml which defines:
+- Tool name and description
+- Parameter schema (JSON Schema)
+- Executor key (must match a key in TOOL_EXECUTORS, e.g., "get_current_weather")
+- Secret references (1Password item/field)
+
+This decouples tool configuration from code.
 """
 
-from ..secrets_broker import SecretReference, SecretsBroker
-from .executors import TOOL_EXECUTORS
+from pathlib import Path
+
+from ..secrets_broker import SecretsBroker
+from .loader import setup_tools_from_config
 
 
-def setup_tools(broker: SecretsBroker, vault: str = "SecureTools"):
+def setup_tools(
+    broker: SecretsBroker,
+    vault: str = "SecureTools",
+    config_path: Path | None = None,
+) -> list[str]:
     """
-    Register all tools with the secrets broker.
+    Load and register all tools from tools.yml.
 
     Args:
         broker: The SecretsBroker instance
         vault: The 1Password vault name containing secrets
+        config_path: Optional path to tools.yml (defaults to package resource)
+
+    Returns:
+        List of registered tool names
     """
-
-    # Weather tool - needs API key
-    broker.register_tool(
-        name="get_current_weather",
-        executor=TOOL_EXECUTORS["get_current_weather"],
-        secrets=[SecretReference(vault=vault, item="WeatherAPI", field="api_key")],
-    )
-
-    # Protected status tool - needs auth token
-    broker.register_tool(
-        name="get_protected_status",
-        executor=TOOL_EXECUTORS["get_protected_status"],
-        secrets=[SecretReference(vault=vault, item="InternalAPI", field="auth_token")],
-    )
-
-    # List services - no secrets needed
-    broker.register_tool(
-        name="list_available_services",
-        executor=TOOL_EXECUTORS["list_available_services"],
-        secrets=[],
-    )
+    return setup_tools_from_config(broker, vault=vault, config_path=config_path)

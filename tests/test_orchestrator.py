@@ -9,14 +9,18 @@ import pytest
 from secure_tools.config import config
 from secure_tools.orchestrator import Message, Orchestrator
 from secure_tools.secrets_broker import SecretsBroker
+from secure_tools.tools.loader import clear_tool_registry
+from secure_tools.tools.setup import setup_tools
 
 
 class TestOrchestrator:
     """Test the orchestrator's security validation."""
 
     def setup_method(self):
-        """Set up a test orchestrator."""
+        """Set up a test orchestrator with tools loaded from config."""
+        clear_tool_registry()
         self.broker = SecretsBroker()
+        setup_tools(self.broker)
         self.orchestrator = Orchestrator(self.broker)
 
     def test_get_tool_definitions(self):
