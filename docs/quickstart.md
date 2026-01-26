@@ -116,10 +116,10 @@ python run.py list-tools                        # List tools
 
 ## Tool Configuration
 
-Tools are defined in `config/tools.yml`, not in Python code. This makes it easy to add or modify tools without changing code.
+Tools are defined in `secure_tools/tool_configs/tools.yml`, not in Python code. This makes it easy to add or modify tools without changing code.
 
 ```yaml
-# config/tools.yml
+# secure_tools/tool_configs/tools.yml
 tools:
   get_current_weather:
     description: "Get the current weather for a location."
@@ -164,7 +164,7 @@ TOOL_EXECUTORS = {
 }
 ```
 
-3. **Add config** to `config/tools.yml`:
+3. **Add config** to `secure_tools/tool_configs/tools.yml`:
 
 ```yaml
   my_new_tool:

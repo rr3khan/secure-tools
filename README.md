@@ -282,10 +282,10 @@ It is a practical example of **Security for AI** and **AI for Security** princip
 
 ## Tool Configuration
 
-Tools are defined in `config/tools.yml`, making it easy to add or modify tools without changing code:
+Tools are defined in `secure_tools/tool_configs/tools.yml`, making it easy to add or modify tools without changing code:
 
 ```yaml
-# config/tools.yml
+# secure_tools/tool_configs/tools.yml
 tools:
   get_current_weather:
     description: "Get the current weather for a location."

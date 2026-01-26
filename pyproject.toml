@@ -15,6 +15,7 @@ keywords = ["llm", "ollama", "1password", "security", "agent", "tools"]
 dependencies = [
     "httpx>=0.27.0",
     "pydantic>=2.0.0",
+    "pyyaml>=6.0.0",
     "rich>=13.0.0",
     "typer>=0.12.0",
 ]
@@ -35,6 +36,9 @@ secure-tools = "secure_tools.main:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["secure_tools*"]
+
+[tool.setuptools.package-data]
+"secure_tools.tool_configs" = ["*.yml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

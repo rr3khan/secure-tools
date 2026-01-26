@@ -94,10 +94,10 @@ Examples:
 
 ## How Secrets Are Configured
 
-Secret references are defined in `config/tools.yml`, **not** in Python code. Each tool specifies which 1Password items it needs:
+Secret references are defined in `secure_tools/tool_configs/tools.yml`, **not** in Python code. Each tool specifies which 1Password items it needs:
 
 ```yaml
-# config/tools.yml
+# secure_tools/tool_configs/tools.yml
 tools:
   get_current_weather:
     description: "Get the current weather for a location."

@@ -5,6 +5,7 @@ This module decouples tool definitions from code, making tools
 more modular and configurable without code changes.
 """
 
+from importlib import resources
 from pathlib import Path
 
 import yaml
@@ -37,8 +38,11 @@ class ToolsConfig(BaseModel):
     tools: dict[str, ToolConfig]
 
 
-# Default config path relative to project root
-DEFAULT_CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "tools.yml"
+def _get_default_config_content() -> str:
+    """Load the default tools.yml from package resources."""
+    # Use importlib.resources to load config from within the package
+    # This works whether running from source or installed as a package
+    return resources.files("secure_tools.tool_configs").joinpath("tools.yml").read_text()
 
 
 def load_tools_config(config_path: Path | None = None) -> ToolsConfig:
@@ -46,7 +50,8 @@ def load_tools_config(config_path: Path | None = None) -> ToolsConfig:
     Load tools configuration from YAML file.
 
     Args:
-        config_path: Path to tools.yml. Defaults to config/tools.yml
+        config_path: Path to tools.yml. If None, loads the default
+                    config from the package (secure_tools/config/tools.yml)
 
     Returns:
         Validated ToolsConfig object
@@ -55,13 +60,16 @@ def load_tools_config(config_path: Path | None = None) -> ToolsConfig:
         FileNotFoundError: If config file doesn't exist
         ValueError: If config is invalid
     """
-    path = config_path or DEFAULT_CONFIG_PATH
-
-    if not path.exists():
-        raise FileNotFoundError(f"Tools config not found: {path}")
-
-    with open(path) as f:
-        raw_config = yaml.safe_load(f)
+    if config_path is not None:
+        # Load from explicit path
+        if not config_path.exists():
+            raise FileNotFoundError(f"Tools config not found: {config_path}")
+        with open(config_path) as f:
+            raw_config = yaml.safe_load(f)
+    else:
+        # Load from package resources (default)
+        content = _get_default_config_content()
+        raw_config = yaml.safe_load(content)
 
     return ToolsConfig(**raw_config)
 
