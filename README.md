@@ -280,6 +280,31 @@ It is a practical example of **Security for AI** and **AI for Security** princip
 
 ---
 
+## Tool Configuration
+
+Tools are defined in `config/tools.yml`, making it easy to add or modify tools without changing code:
+
+```yaml
+# config/tools.yml
+tools:
+  get_current_weather:
+    description: "Get the current weather for a location."
+    executor: "get_current_weather"
+    parameters:
+      type: object
+      properties:
+        location:
+          type: string
+      required: ["location", "format"]
+    secrets:
+      - item: "WeatherAPI"      # 1Password item name
+        field: "api_key"        # Field within the item
+```
+
+The **vault** is specified via CLI (`--vault SecureTools`). At runtime, secrets are resolved by combining vault + item + field into a 1Password reference: `op://SecureTools/WeatherAPI/api_key`
+
+---
+
 ## Quick Start
 
 ```bash
@@ -288,7 +313,7 @@ task setup              # Create venv & install deps
 task chat               # Start chatting
 ```
 
-📖 **[Full Quick Start Guide](docs/quickstart.md)**
+📖 **[Full Quick Start Guide](docs/quickstart.md)** - includes how to add new tools
 
 ---
 
@@ -302,4 +327,4 @@ op signin
 task chat:live
 ```
 
-🔐 **[Full 1Password Setup Guide](docs/1password-setup.md)**
+🔐 **[Full 1Password Setup Guide](docs/1password-setup.md)** - includes secret reference format

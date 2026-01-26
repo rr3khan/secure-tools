@@ -92,6 +92,40 @@ Examples:
 - `op://SecureTools/InternalAPI/auth_token`
 - `op://MyVault/DatabaseCreds/password`
 
+## How Secrets Are Configured
+
+Secret references are defined in `config/tools.yml`, **not** in Python code. Each tool specifies which 1Password items it needs:
+
+```yaml
+# config/tools.yml
+tools:
+  get_current_weather:
+    description: "Get the current weather for a location."
+    executor: "get_current_weather"
+    parameters:
+      # ... parameter schema ...
+    secrets:
+      - item: "WeatherAPI"      # 1Password item name
+        field: "api_key"        # Field within the item
+```
+
+The **vault** is specified separately via CLI:
+
+```bash
+python run.py chat --vault SecureTools
+```
+
+At runtime, the system combines these to create the full reference:
+- Vault (from CLI): `SecureTools`
+- Item (from YAML): `WeatherAPI`
+- Field (from YAML): `api_key`
+- **Result**: `op://SecureTools/WeatherAPI/api_key`
+
+This separation allows:
+- Same config file across environments
+- Different vaults for dev/staging/prod
+- Easy auditing of which tools need which secrets
+
 ## Security Best Practices
 
 1. **Use a dedicated vault** - Keep AI tool secrets separate from personal credentials
