@@ -45,20 +45,57 @@ def _get_default_config_content() -> str:
     return resources.files("secure_tools.tool_configs").joinpath("tools.yml").read_text()
 
 
+def _validate_raw_config(raw_config: object, source: str) -> dict:
+    """
+    Validate the raw YAML config structure before Pydantic parsing.
+
+    Args:
+        raw_config: The result of yaml.safe_load()
+        source: Description of the config source for error messages
+
+    Returns:
+        The validated config as a dict
+
+    Raises:
+        ValueError: If the config structure is invalid
+    """
+    if raw_config is None:
+        raise ValueError(f"Tools config '{source}' is empty or contains no data.")
+
+    if not isinstance(raw_config, dict):
+        raise ValueError(
+            f"Tools config '{source}' must be a mapping at the top level, "
+            f"got {type(raw_config).__name__} instead."
+        )
+
+    if "tools" not in raw_config:
+        raise ValueError(
+            f"Tools config '{source}' must contain a top-level 'tools' key."
+        )
+
+    if not isinstance(raw_config["tools"], dict):
+        raise ValueError(
+            f"'tools' section in '{source}' must be a mapping of tool names to "
+            f"configurations, got {type(raw_config['tools']).__name__} instead."
+        )
+
+    return raw_config
+
+
 def load_tools_config(config_path: Path | None = None) -> ToolsConfig:
     """
     Load tools configuration from YAML file.
 
     Args:
         config_path: Path to tools.yml. If None, loads the default
-                    config from the package (secure_tools/config/tools.yml)
+                    config from the package (secure_tools/tool_configs/tools.yml)
 
     Returns:
         Validated ToolsConfig object
 
     Raises:
         FileNotFoundError: If config file doesn't exist
-        ValueError: If config is invalid
+        ValueError: If config structure is invalid or missing required fields
     """
     if config_path is not None:
         # Load from explicit path
@@ -66,12 +103,17 @@ def load_tools_config(config_path: Path | None = None) -> ToolsConfig:
             raise FileNotFoundError(f"Tools config not found: {config_path}")
         with open(config_path) as f:
             raw_config = yaml.safe_load(f)
+        source = str(config_path)
     else:
         # Load from package resources (default)
         content = _get_default_config_content()
         raw_config = yaml.safe_load(content)
+        source = "secure_tools/tool_configs/tools.yml"
 
-    return ToolsConfig(**raw_config)
+    # Validate structure before Pydantic parsing
+    validated_config = _validate_raw_config(raw_config, source)
+
+    return ToolsConfig(**validated_config)
 
 
 def setup_tools_from_config(

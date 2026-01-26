@@ -67,6 +67,42 @@ class TestLoadToolsConfig:
             with pytest.raises(yaml.YAMLError):
                 load_tools_config(Path(f.name))
 
+    def test_empty_file_raises_value_error(self):
+        """Should raise ValueError for empty config file."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+            f.write("")
+            f.flush()
+
+            with pytest.raises(ValueError, match="empty or contains no data"):
+                load_tools_config(Path(f.name))
+
+    def test_non_mapping_raises_value_error(self):
+        """Should raise ValueError when top-level is not a mapping."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+            f.write("- item1\n- item2\n")
+            f.flush()
+
+            with pytest.raises(ValueError, match="must be a mapping at the top level"):
+                load_tools_config(Path(f.name))
+
+    def test_missing_tools_key_raises_value_error(self):
+        """Should raise ValueError when 'tools' key is missing."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+            f.write("other_key: value\n")
+            f.flush()
+
+            with pytest.raises(ValueError, match="must contain a top-level 'tools' key"):
+                load_tools_config(Path(f.name))
+
+    def test_tools_not_mapping_raises_value_error(self):
+        """Should raise ValueError when 'tools' is not a mapping."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+            f.write("tools:\n  - tool1\n  - tool2\n")
+            f.flush()
+
+            with pytest.raises(ValueError, match="must be a mapping of tool names"):
+                load_tools_config(Path(f.name))
+
 
 class TestSetupToolsFromConfig:
     """Test tool registration from config."""
