@@ -295,7 +295,7 @@ tools:
       properties:
         location:
           type: string
-      required: ["location", "format"]
+      required: ["location"]
     secrets:
       - item: "WeatherAPI"      # 1Password item name
         field: "api_key"        # Field within the item

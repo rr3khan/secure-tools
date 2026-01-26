@@ -130,7 +130,7 @@ tools:
         location:
           type: string
           description: "The location to get weather for"
-      required: ["location", "format"]
+      required: ["location"]
     secrets:
       - item: "WeatherAPI"      # 1Password item name
         field: "api_key"        # Field within the item
