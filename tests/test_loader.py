@@ -4,18 +4,18 @@ Tests for the YAML tool configuration loader.
 Verifies that tools are correctly loaded from config/tools.yml.
 """
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import pytest
 
 from secure_tools.secrets_broker import SecretsBroker
 from secure_tools.tools import tool_registry
 from secure_tools.tools.loader import (
+    ToolsConfig,
     clear_tool_registry,
     load_tools_config,
     setup_tools_from_config,
-    ToolsConfig,
 )
 
 
@@ -58,11 +58,13 @@ class TestLoadToolsConfig:
 
     def test_invalid_yaml_raises_error(self):
         """Should raise error for invalid YAML."""
+        import yaml
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
             f.write("invalid: yaml: content: [")
             f.flush()
 
-            with pytest.raises(Exception):  # yaml.YAMLError
+            with pytest.raises(yaml.YAMLError):
                 load_tools_config(Path(f.name))
 
 
