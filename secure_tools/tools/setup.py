@@ -1,10 +1,10 @@
 """
 Tool Setup - Registers tools with the Secrets Broker.
 
-Tools are loaded from config/tools.yml which defines:
+Tools are loaded from secure_tools/tool_configs/tools.yml which defines:
 - Tool name and description
 - Parameter schema (JSON Schema)
-- Executor function name
+- Executor key (must match a key in TOOL_EXECUTORS, e.g., "get_current_weather")
 - Secret references (1Password item/field)
 
 This decouples tool configuration from code.
@@ -22,12 +22,12 @@ def setup_tools(
     config_path: Path | None = None,
 ) -> list[str]:
     """
-    Load and register all tools from config/tools.yml.
+    Load and register all tools from tools.yml.
 
     Args:
         broker: The SecretsBroker instance
         vault: The 1Password vault name containing secrets
-        config_path: Optional path to tools.yml (defaults to config/tools.yml)
+        config_path: Optional path to tools.yml (defaults to package resource)
 
     Returns:
         List of registered tool names
